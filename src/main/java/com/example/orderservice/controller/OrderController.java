@@ -5,7 +5,9 @@ import com.example.orderservice.entity.OrderItem;
 import com.example.orderservice.repository.OrderRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @RestController
@@ -30,13 +32,23 @@ public class OrderController {
             total += item.getSubtotal();
         }
 
-        order.setOrderNo("ORD" + System.currentTimeMillis());
         order.setTotalAmount(total);
         order.setStatus("CREATED");
         order.setPaymentStatus("UNPAID");
         order.setCreatedAt(LocalDateTime.now());
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(order);
+
+        String today =
+                LocalDate.now()
+                        .format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+
+        String orderNo =
+                "TF" + today + String.format("%04d", savedOrder.getId());
+
+        savedOrder.setOrderNo(orderNo);
+
+        return orderRepository.save(savedOrder);
     }
 
     @GetMapping("/{id}")
@@ -57,11 +69,13 @@ public class OrderController {
 
         return orderRepository.save(order);
     }
+
     @GetMapping("/member/{memberId}")
     public List<Order> getMemberOrders(
             @PathVariable Long memberId) {
 
-        return orderRepository.findByMemberId(memberId);
-    }
+        return orderRepository
+                .findByMemberIdOrderByIdDesc(memberId);
 
+    }
 }
