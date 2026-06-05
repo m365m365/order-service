@@ -1,0 +1,32 @@
+POST http://localhost:8081/api/orders
+Content-Type: application/json
+
+{
+  "memberId": 1,
+  "receiverName": "測試會員",
+  "receiverEmail": "mm365day@gmail.com",
+  "receiverPhone": "0912345678",
+  "note": "HTTP Client 測試訂單",
+  "items": [
+    {
+      "productId": 2,
+      "productName": "咖啡優惠券",
+      "price": 150,
+      "quantity": 2
+    }
+  ]
+}
+
+###
+
+GET http://localhost:8081/api/orders/1
+
+
+###
+
+PUT http://localhost:8081/api/orders/1/cancel
+
+
+###
+
+GET http://localhost:8081/api/orders/member/1
