@@ -2,7 +2,9 @@ package com.example.orderservice.controller;
 
 import com.example.orderservice.entity.Order;
 import com.example.orderservice.entity.OrderItem;
+import com.example.orderservice.entity.Product;
 import com.example.orderservice.repository.OrderRepository;
+import com.example.orderservice.repository.ProductRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -16,9 +18,14 @@ import java.util.List;
 public class OrderController {
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
 
-    public OrderController(OrderRepository orderRepository) {
+    public OrderController(
+            OrderRepository orderRepository,
+            ProductRepository productRepository) {
+
         this.orderRepository = orderRepository;
+        this.productRepository = productRepository;
     }
 
     @PostMapping
@@ -27,6 +34,18 @@ public class OrderController {
         int total = 0;
 
         for (OrderItem item : order.getItems()) {
+
+            Product product =
+                    productRepository.findById(item.getProductId())
+                            .orElseThrow();
+
+            if (product.getStock() < item.getQuantity()) {
+                throw new RuntimeException("商品庫存不足：" + item.getProductName());
+            }
+
+            product.setStock(product.getStock() - item.getQuantity());
+            productRepository.save(product);
+
             item.setSubtotal(item.getPrice() * item.getQuantity());
             item.setOrder(order);
             total += item.getSubtotal();
@@ -59,10 +78,30 @@ public class OrderController {
     @PutMapping("/{id}/cancel")
     public Order cancelOrder(@PathVariable Long id) {
 
-        Order order = orderRepository.findById(id).orElse(null);
+        Order order =
+                orderRepository.findById(id).orElse(null);
 
         if (order == null) {
             return null;
+        }
+
+        if ("CANCELLED".equals(order.getStatus())) {
+            return order;
+        }
+
+        for (OrderItem item : order.getItems()) {
+
+            productRepository
+                    .findById(item.getProductId())
+                    .ifPresent(product -> {
+
+                        product.setStock(
+                                product.getStock()
+                                        + item.getQuantity()
+                        );
+
+                        productRepository.save(product);
+                    });
         }
 
         order.setStatus("CANCELLED");
@@ -71,11 +110,7 @@ public class OrderController {
     }
 
     @GetMapping("/member/{memberId}")
-    public List<Order> getMemberOrders(
-            @PathVariable Long memberId) {
-
-        return orderRepository
-                .findByMemberIdOrderByIdDesc(memberId);
-
+    public List<Order> getMemberOrders(@PathVariable Long memberId) {
+        return orderRepository.findByMemberIdOrderByIdDesc(memberId);
     }
 }
