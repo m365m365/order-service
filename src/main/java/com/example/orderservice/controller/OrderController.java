@@ -113,4 +113,61 @@ public class OrderController {
     public List<Order> getMemberOrders(@PathVariable Long memberId) {
         return orderRepository.findByMemberIdOrderByIdDesc(memberId);
     }
+
+    @PutMapping("/{id}/pay")
+    public Order payOrder(@PathVariable Long id) {
+
+        Order order =
+                orderRepository.findById(id).orElse(null);
+
+        if (order == null) {
+            return null;
+        }
+
+        if ("CANCELLED".equals(order.getStatus())) {
+            return order;
+        }
+
+        order.setStatus("PAID");
+
+        return orderRepository.save(order);
+    }
+
+    @PutMapping("/{id}/ship")
+    public Order shipOrder(@PathVariable Long id) {
+
+        Order order =
+                orderRepository.findById(id).orElse(null);
+
+        if (order == null) {
+            return null;
+        }
+
+        if (!"PAID".equals(order.getStatus())) {
+            return order;
+        }
+
+        order.setStatus("SHIPPING");
+
+        return orderRepository.save(order);
+    }
+
+    @PutMapping("/{id}/complete")
+    public Order completeOrder(@PathVariable Long id) {
+
+        Order order =
+                orderRepository.findById(id).orElse(null);
+
+        if (order == null) {
+            return null;
+        }
+
+        if (!"SHIPPING".equals(order.getStatus())) {
+            return order;
+        }
+
+        order.setStatus("COMPLETED");
+
+        return orderRepository.save(order);
+    }
 }
