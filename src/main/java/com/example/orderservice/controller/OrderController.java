@@ -170,4 +170,10 @@ public class OrderController {
 
         return orderRepository.save(order);
     }
+
+    @GetMapping("/count")
+    @ResponseBody
+    public long count() {
+        return orderRepository.count();
+    }
 }
